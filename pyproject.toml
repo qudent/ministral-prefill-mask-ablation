@@ -17,9 +17,8 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-train = [
-  "deepspeed>=0.16.0"
-]
+# Keep train extra for CLI compatibility, but avoid deepspeed on single-GPU runs.
+train = []
 
 [project.scripts]
 prefill-eval = "prefill_ablation.eval_mcq:main"
