@@ -5,6 +5,7 @@ Stage 1/2 are complete and documented. Stage 3B is now leakage-safe (prompt bidi
 but the latest long rerun reached `1200/1200` and then crashed during model save with a Transformers
 `NotImplementedError` in weight-conversion reverse ops. Training progress exists; completion marker was not written.
 Local code now forces Trainer `save_strategy=no` to skip failing internal checkpoint saves; rerun is pending.
+Prior-art context for PrefixLM/prefill-bidirectional masking is documented in `docs/PREFILL_LM_PRIOR_ART.md`.
 
 ## Active Goals
 - [x] Stage 1 baseline eval
@@ -45,6 +46,7 @@ Local code now forces Trainer `save_strategy=no` to skip failing internal checkp
 - Stage 1 metrics: `runs/stage1_baseline_eval/20260214-145148/metrics.json`
 - Stage 2 metrics: `runs/stage2_ablation_eval/20260214-145456/metrics.json`
 - Stage 1/2 writeup: `docs/RESULTS_STAGE1_STAGE2.md`
+- PrefixLM prior-art writeup: `docs/PREFILL_LM_PRIOR_ART.md`
 - Failed 3B rerun logs:
   - `runs/stage3_finetune_prefill_bidir/20260214-204823/log.txt`
   - `runs/stage3_finetune_prefill_bidir/20260214-213740/log.txt`
