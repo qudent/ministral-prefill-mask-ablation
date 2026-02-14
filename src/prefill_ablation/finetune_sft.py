@@ -374,6 +374,10 @@ def main() -> None:
         "report_to": [],
         "remove_unused_columns": False,
     }
+    # Avoid Trainer-managed checkpoint saves for this model family; they can fail in
+    # save_pretrained reverse conversion. We handle final save explicitly below.
+    if "save_strategy" in inspect.signature(TrainingArguments.__init__).parameters:
+        training_args_kwargs["save_strategy"] = "no"
     # transformers API moved evaluation_strategy -> eval_strategy in newer releases.
     if "evaluation_strategy" in inspect.signature(TrainingArguments.__init__).parameters:
         training_args_kwargs["evaluation_strategy"] = "steps"
