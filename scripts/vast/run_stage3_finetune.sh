@@ -6,7 +6,9 @@ MODEL_ID="${MODEL_ID:-mistralai/Ministral-3-3B-Instruct-2512}"
 DATASET_ID="${DATASET_ID:-yahma/alpaca-cleaned}"
 MAX_STEPS="${MAX_STEPS:-1200}"
 TRAIN_SAMPLES="${TRAIN_SAMPLES:-50000}"
-EVAL_SAMPLES="${EVAL_SAMPLES:-1000}"
+EVAL_SAMPLES="${EVAL_SAMPLES:-250}"
+EVAL_STEPS="${EVAL_STEPS:-200}"
+SAVE_STEPS="${SAVE_STEPS:-400}"
 GRAD_ACCUM="${GRAD_ACCUM:-16}"
 LR="${LR:-2e-5}"
 
@@ -37,6 +39,8 @@ uv run prefill-finetune \
   --max-steps "$MAX_STEPS" \
   --train-samples "$TRAIN_SAMPLES" \
   --eval-samples "$EVAL_SAMPLES" \
+  --eval-steps "$EVAL_STEPS" \
+  --save-steps "$SAVE_STEPS" \
   --gradient-accumulation-steps "$GRAD_ACCUM" \
   --learning-rate "$LR" \
   --gradient-checkpointing \
