@@ -4,7 +4,7 @@
 Stage 1/2 are complete and documented. Stage 3B is now leakage-safe (prompt bidirectional, response causal),
 but the latest long rerun reached `1200/1200` and then crashed during model save with a Transformers
 `NotImplementedError` in weight-conversion reverse ops. Training progress exists; completion marker was not written.
-Local code now forces Trainer `save_strategy=no` to skip failing internal checkpoint saves; rerun is pending.
+Local code now forces Trainer `save_strategy=no` to skip failing internal checkpoint saves; rerun is active.
 Prior-art context for PrefixLM/prefill-bidirectional masking is documented in `docs/PREFILL_LM_PRIOR_ART.md`.
 
 ## Active Goals
@@ -36,11 +36,12 @@ Prior-art context for PrefixLM/prefill-bidirectional masking is documented in `d
 
 ## Current Infra State
 - Active Vast instance: `ssh7.vast.ai:33854` (`31433854`)
-- Remote tmux server is down; `prefill-s3b` session no longer exists.
-- Latest 3B run dir: `runs/stage3_finetune_prefill_bidir/20260214-213740`
-  - contains `checkpoint-1200/` and `log.txt`
-  - does not contain completion marker `runs/stage3_finetune_prefill_bidir/.run_complete`
-- Local babysit tmux for this check: `prefill-babysit` (Codex session used for watchdog + failure triage)
+- New Stage 3B rerun is active: `runs/stage3_finetune_prefill_bidir/20260214-233534`
+  - remote tmux session: `prefill-s3b`
+  - active training process observed: `uv run prefill-finetune ... --prompt-bidir-response-causal-train`
+- Prior failed launch `20260214-233230` ended immediately due non-login PATH (`uv: command not found`).
+- Local babysit tmux: `prefill-babysit` is in blocking Step3 watcher mode (`wait_or_crash.sh`) and will continue to:
+  sync artifacts/checkpoints, then destroy instance on successful completion.
 
 ## Artifacts
 - Stage 1 metrics: `runs/stage1_baseline_eval/20260214-145148/metrics.json`
@@ -52,8 +53,7 @@ Prior-art context for PrefixLM/prefill-bidirectional masking is documented in `d
   - `runs/stage3_finetune_prefill_bidir/20260214-213740/log.txt`
 
 ## Next Steps
-1. Pull latest fix on Vast instance and rerun Stage 3B (`prefill_bidir`) to completion.
-2. Verify `summary.json` and `final/` are present; capture run metrics.
-3. Sync run artifacts/checkpoints from Vast to local repo.
-4. Destroy Vast instance after confirmed artifact sync.
-5. Run Stage 4 ablated eval on Stage 3A and valid Stage 3B artifact.
+1. Let active Stage 3B run complete under babysitter workflow.
+2. Verify synced local artifact contains `summary.json` and `final/checkpoint_meta.json`.
+3. Confirm Vast instance `31433854` is destroyed by workflow.
+4. Run Stage 4 ablated eval on Stage 3A and valid Stage 3B artifact.
