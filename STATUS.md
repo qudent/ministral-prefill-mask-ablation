@@ -26,6 +26,10 @@ Stage 1/2 and Stage 3 are complete. Stage 3 runs finished on 2026-02-14 with fal
 - 3B prefill_bidir run: `runs/stage3_finetune_prefill_bidir/20260214-201019`
   - `eval_loss=7.0321`, `train_loss=5.4243`, `train_steps_per_second=2.070`
 - Both wrote `summary.json` and `final/` with `checkpoint_meta.json` format `raw_state_dict`.
+- Diagnosis from direct probe (2026-02-14): removing causal mask in SFT causes severe label leakage.
+  - Same sample, same weights: `loss_causal ~= 1.023`, `loss_prefill_bidir ~= 0.070`.
+  - This explains implausibly low early 3B loss and supports that current 3B objective is degenerate.
+  - 3B then destabilizes (grad norms spike to `~102` by step 50), likely due high-LR full-weight updates on leaked objective.
 
 ## Runtime/Infra Notes
 - Latest fix commits:
@@ -46,4 +50,4 @@ Stage 1/2 and Stage 3 are complete. Stage 3 runs finished on 2026-02-14 with fal
 ## Next Steps
 1. Run Stage 4 ablated prefill eval on both Stage 3 checkpoints.
 2. Compute recovery ratio versus Stage 1 baseline macro/task accuracies.
-3. Decide whether a longer Stage 3 run is warranted for 3B recovery.
+3. Replace 3B training objective with leakage-safe masking (e.g., bidir on prompt tokens only, causal on response tokens), then rerun 3B.
