@@ -1,34 +1,40 @@
 # Ministral 3B Prefill Mask Ablation - Status
 
 ## Current State
-Project scaffold is complete and published at `https://github.com/qudent/ministral-prefill-mask-ablation`. The repo is VAST-first: local machine only edits/pushes code, while all model downloads, eval, and training execute on Vast.ai instances.
+Execution has started on Vast.ai. All previous instances were destroyed per request, a fresh instance was created, and Stage 1 baseline evaluation is currently running in a remote tmux session. Stage 2 is queued to run immediately after Stage 1 in the same session.
 
 ## Active Goals
-- [x] Create a clean Dropbox project repo with VAST-first workflow
-  - [x] Add coordination `STATUS.md`
-  - [x] Add staged experiment design and kill criteria
-- [x] Implement ablation + eval + training scripts
-  - [x] Prefill bidirectional patch utility
-  - [x] Zero-shot multi-task MCQ evaluation
-  - [x] Full-weight SFT runner with early-kill callback
-- [x] Publish public GitHub repo and push initial code
-- [x] Confirm baseline model id for runs
+- [x] Create repo, scripts, and VAST-first workflow
+- [x] Confirm model id (`mistralai/Ministral-3b-instruct`)
+- [x] Provision fresh Vast instance for execution
 - [ ] Execute staged runs on Vast.ai and collect first metrics
   - [ ] Stage 1 baseline metrics
   - [ ] Stage 2 ablated baseline metrics
   - [ ] Stage 3A/3B finetune metrics
   - [ ] Stage 4 recovery comparison
 
+## Runtime Details
+- Vast instance ID: `31425306`
+- GPU: `1x RTX 3090`
+- Label: `prefill-mask-s12`
+- SSH endpoint: `ssh://root@108.55.118.247:53346`
+- Remote tmux session: `prefill-s12`
+- Remote repo path: `/root/ministral-prefill-mask-ablation`
+- Current command chain:
+  1. `bash scripts/vast/bootstrap.sh`
+  2. `bash scripts/vast/run_stage1_baseline_eval.sh`
+  3. `bash scripts/vast/run_stage2_ablation_eval.sh`
+
 ## Blockers
-- No technical blocker for launching Stage 1/2. Remaining work is execution on Vast instances and collecting metrics.
+- No current blocker. Waiting for Stage 1/2 completion and metric files.
 
 ## Recent Results
-- Added prefill-only mask ablation patch (`q_len > 1 => is_causal=False` for attention modules with `is_causal`).
-- Added stage scripts for baseline eval, ablated eval, two finetune variants, and post-finetune evaluation.
-- Published repo and synced with Dropbox path `~/Dropbox/ministral-prefill-mask-ablation`.
-- Confirmed `mistralai/Ministral-3b-instruct` as default model id; scripts still support alternative Ministral 3B variants via `MODEL_ID`.
+- Destroyed existing Vast instances and verified empty slate.
+- Created fresh instance from offer and confirmed GPU visibility via `nvidia-smi`.
+- Started bootstrap + Stage 1/2 pipeline in persistent remote tmux.
 
 ## Next Steps
-1. Launch Stage 1 and Stage 2 on Vast and compare macro accuracy drop.
-2. Run Stage 3A and Stage 3B in parallel and compute recovery ratio from Stage 4.
-3. Rewrite this file with concrete metrics and the best next experiment.
+1. Monitor Stage 1 until `metrics.json` is written.
+2. Let Stage 2 run automatically and capture its `metrics.json`.
+3. Compute baseline vs ablated macro drop and update this file with concrete numbers.
+4. Launch Stage 3A and Stage 3B in parallel after Stage 1/2 summary.
