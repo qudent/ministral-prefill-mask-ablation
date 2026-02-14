@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import inspect
 import json
 from dataclasses import dataclass
 from pathlib import Path
@@ -257,28 +258,34 @@ def main() -> None:
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    training_args = TrainingArguments(
-        output_dir=str(output_dir),
-        max_steps=args.max_steps,
-        per_device_train_batch_size=args.per_device_train_batch_size,
-        per_device_eval_batch_size=args.per_device_eval_batch_size,
-        gradient_accumulation_steps=args.gradient_accumulation_steps,
-        learning_rate=args.learning_rate,
-        weight_decay=args.weight_decay,
-        warmup_ratio=args.warmup_ratio,
-        optim=args.optim,
-        lr_scheduler_type=args.lr_scheduler_type,
-        bf16=args.dtype.lower() in {"bf16", "bfloat16"},
-        fp16=args.dtype.lower() in {"fp16", "float16"},
-        logging_steps=args.logging_steps,
-        evaluation_strategy="steps",
-        eval_steps=args.eval_steps,
-        save_steps=args.save_steps,
-        save_total_limit=2,
-        gradient_checkpointing=args.gradient_checkpointing,
-        report_to=[],
-        remove_unused_columns=False,
-    )
+    training_args_kwargs = {
+        "output_dir": str(output_dir),
+        "max_steps": args.max_steps,
+        "per_device_train_batch_size": args.per_device_train_batch_size,
+        "per_device_eval_batch_size": args.per_device_eval_batch_size,
+        "gradient_accumulation_steps": args.gradient_accumulation_steps,
+        "learning_rate": args.learning_rate,
+        "weight_decay": args.weight_decay,
+        "warmup_ratio": args.warmup_ratio,
+        "optim": args.optim,
+        "lr_scheduler_type": args.lr_scheduler_type,
+        "bf16": args.dtype.lower() in {"bf16", "bfloat16"},
+        "fp16": args.dtype.lower() in {"fp16", "float16"},
+        "logging_steps": args.logging_steps,
+        "eval_steps": args.eval_steps,
+        "save_steps": args.save_steps,
+        "save_total_limit": 2,
+        "gradient_checkpointing": args.gradient_checkpointing,
+        "report_to": [],
+        "remove_unused_columns": False,
+    }
+    # transformers API moved evaluation_strategy -> eval_strategy in newer releases.
+    if "evaluation_strategy" in inspect.signature(TrainingArguments.__init__).parameters:
+        training_args_kwargs["evaluation_strategy"] = "steps"
+    else:
+        training_args_kwargs["eval_strategy"] = "steps"
+
+    training_args = TrainingArguments(**training_args_kwargs)
 
     trainer = Trainer(
         model=model,
