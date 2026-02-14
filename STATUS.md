@@ -12,6 +12,7 @@ Project scaffold is complete and published at `https://github.com/qudent/ministr
   - [x] Zero-shot multi-task MCQ evaluation
   - [x] Full-weight SFT runner with early-kill callback
 - [x] Publish public GitHub repo and push initial code
+- [x] Confirm baseline model id for runs
 - [ ] Execute staged runs on Vast.ai and collect first metrics
   - [ ] Stage 1 baseline metrics
   - [ ] Stage 2 ablated baseline metrics
@@ -19,15 +20,15 @@ Project scaffold is complete and published at `https://github.com/qudent/ministr
   - [ ] Stage 4 recovery comparison
 
 ## Blockers
-- Exact HF model ID for the user's "without thinking" Ministral 3B checkpoint is not yet pinned. Scripts use `mistralai/Ministral-3b-instruct` placeholder and support override via `MODEL_ID`.
+- No technical blocker for launching Stage 1/2. Remaining work is execution on Vast instances and collecting metrics.
 
 ## Recent Results
 - Added prefill-only mask ablation patch (`q_len > 1 => is_causal=False` for attention modules with `is_causal`).
 - Added stage scripts for baseline eval, ablated eval, two finetune variants, and post-finetune evaluation.
 - Published repo and synced with Dropbox path `~/Dropbox/ministral-prefill-mask-ablation`.
+- Confirmed `mistralai/Ministral-3b-instruct` as default model id; scripts still support alternative Ministral 3B variants via `MODEL_ID`.
 
 ## Next Steps
-1. Confirm the exact target "without thinking" model ID and set `MODEL_ID`.
-2. Launch Stage 1 and Stage 2 on Vast and compare macro accuracy drop.
-3. Run Stage 3A and Stage 3B in parallel and compute recovery ratio from Stage 4.
-4. Rewrite this file with concrete metrics and the best next experiment.
+1. Launch Stage 1 and Stage 2 on Vast and compare macro accuracy drop.
+2. Run Stage 3A and Stage 3B in parallel and compute recovery ratio from Stage 4.
+3. Rewrite this file with concrete metrics and the best next experiment.

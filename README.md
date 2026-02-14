@@ -53,7 +53,7 @@ bash scripts/vast/run_stage4_postft_eval.sh \
 ```
 
 ## Model ID
-Default scripts use `mistralai/Ministral-3b-instruct` as a placeholder. If your "without thinking" checkpoint has a different ID, set:
+Default scripts use `mistralai/Ministral-3b-instruct` (confirmed). If you want to run the same ablation on another Ministral 3B variant, set:
 ```bash
 export MODEL_ID=<your_model_id_or_local_path>
 ```
