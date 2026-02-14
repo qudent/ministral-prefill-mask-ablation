@@ -3,7 +3,7 @@
 ## Current State
 Stage 1/2 are complete and documented. Stage 3B is being rerun with leakage-safe objective
 (prompt bidirectional, response causal). First rerun attempt crashed at step-save; relaunch is in progress
-with intermediate checkpoint saves disabled by default.
+with intermediate checkpoint saves disabled by default. Current rerun is healthy and past the prior failure point.
 
 ## Active Goals
 - [x] Stage 1 baseline eval
@@ -33,8 +33,9 @@ with intermediate checkpoint saves disabled by default.
   to avoid mid-run Trainer step-saves (final save uses project fallback logic).
 - Active rerun: `runs/stage3_finetune_prefill_bidir/20260214-213740` (training steps started; no traceback).
 - Milestone check at `2026-02-14T22:09:50Z`: reached `step 427` (past prior crash at `400`) with tmux alive and no traceback.
+- Latest check (`2026-02-14`): `step 718`, `traceback=no`, remote tmux alive.
 - Completion marker path: `runs/stage3_finetune_prefill_bidir/.run_complete`
-- Local watcher script: `scripts/local/wait_or_crash.sh` (sparse polling)
+- Monitoring mode: no local watcher tmux; run `scripts/local/wait_or_crash.sh` directly from this instance when a blocking wait is needed.
 
 ## Artifacts
 - Stage 1 metrics: `runs/stage1_baseline_eval/20260214-145148/metrics.json`
@@ -43,7 +44,6 @@ with intermediate checkpoint saves disabled by default.
 - Failed rerun log: `runs/stage3_finetune_prefill_bidir/20260214-204823/log.txt`
 
 ## Next Steps
-1. Relaunch Stage 3B on same instance with updated launcher.
-2. Verify run passes step 400 and finishes with `summary.json` + `final/`.
-3. Run Stage 4 ablated eval on Stage 3A and new Stage 3B checkpoints.
-4. Compute recovery ratios vs Stage 1 baseline and update docs.
+1. Let Stage 3B rerun finish and verify `summary.json` + `final/`.
+2. Run Stage 4 ablated eval on Stage 3A and new Stage 3B checkpoints.
+3. Compute recovery ratios vs Stage 1 baseline and update docs.
