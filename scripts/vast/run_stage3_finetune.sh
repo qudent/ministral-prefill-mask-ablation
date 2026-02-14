@@ -8,7 +8,9 @@ MAX_STEPS="${MAX_STEPS:-1200}"
 TRAIN_SAMPLES="${TRAIN_SAMPLES:-50000}"
 EVAL_SAMPLES="${EVAL_SAMPLES:-250}"
 EVAL_STEPS="${EVAL_STEPS:-200}"
-SAVE_STEPS="${SAVE_STEPS:-400}"
+# Default to no intermediate checkpoint save during training loop.
+# This model class can fail in Trainer.save_pretrained on step-saves; final save is handled separately.
+SAVE_STEPS="${SAVE_STEPS:-$((MAX_STEPS + 1))}"
 GRAD_ACCUM="${GRAD_ACCUM:-16}"
 LR="${LR:-2e-5}"
 
