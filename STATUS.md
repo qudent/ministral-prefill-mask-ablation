@@ -1,14 +1,15 @@
 # Ministral 3B Prefill Mask Ablation - Status
 
 ## Current State
-Execution is active on Vast.ai and model loading now works. Stage 1 ran through HellaSwag successfully (500/500, ~0.622 interim accuracy) but then failed on PIQA due `datasets==4.5.0` dropping dataset-script support. Dependency is patched to use `datasets<3` and runs are being restarted.
+Execution is active on Vast.ai with Stage 1 running again. Model loading and datasets package compatibility have been addressed. Latest blocker was a stale Hugging Face dataset cache generated under a different `datasets` major version; cache was cleared and the run restarted.
 
 ## Active Goals
 - [x] Create repo, scripts, and VAST-first workflow
 - [x] Provision fresh Vast instance for execution
 - [x] Identify accessible Ministral 3B model ID
 - [x] Patch model loader for Mistral3 architecture
-- [x] Identify dataset-library incompatibility in stage eval
+- [x] Fix datasets version incompatibility
+- [x] Clear incompatible HF dataset cache on runner
 - [ ] Execute staged runs on Vast.ai and collect first metrics
   - [ ] Stage 1 baseline metrics
   - [ ] Stage 2 ablated baseline metrics
@@ -21,18 +22,19 @@ Execution is active on Vast.ai and model loading now works. Stage 1 ran through 
 - Label: `prefill-mask-s12`
 - SSH endpoint: `ssh://root@108.55.118.247:53346`
 - Remote repo path: `/root/ministral-prefill-mask-ablation`
+- Remote tmux session: `prefill-s12`
 
 ## Blockers
-- No blocker after dependency pin; pending rerun.
+- No known blocker; waiting for Stage 1/2 completion.
 
 ## Recent Results
-- Old model id failed (HF 401), corrected to `mistralai/Ministral-3-3B-Instruct-2512`.
-- Mistral3 architecture mismatch fixed via loader fallback to `AutoModelForImageTextToText`.
-- Stage 1 now executes model scoring and reached end of HellaSwag.
-- Stage 1 failed at PIQA due incompatible `datasets` major version.
+- Corrected model id to `mistralai/Ministral-3-3B-Instruct-2512`.
+- Added loader fallback for `Mistral3ForConditionalGeneration`.
+- Pinned `datasets` to `<3` for benchmark loaders.
+- Cleared `/root/.cache/huggingface/datasets` to remove stale metadata mismatch.
 
 ## Next Steps
-1. Push dependency pin (`datasets>=2.21,<3`) and pull on active instance.
-2. `uv sync` on instance to downgrade datasets.
-3. Rerun Stage 1 baseline and Stage 2 ablation sequentially.
-4. Capture both `metrics.json` files and compute macro-accuracy drop.
+1. Let Stage 1 finish and write `runs/stage1_baseline_eval/<ts>/metrics.json`.
+2. Let Stage 2 run automatically and write `runs/stage2_ablation_eval/<ts>/metrics.json`.
+3. Compare macro accuracy baseline vs ablated and record in this file.
+4. Launch Stage 3A and Stage 3B in parallel if Stage 1/2 complete cleanly.
