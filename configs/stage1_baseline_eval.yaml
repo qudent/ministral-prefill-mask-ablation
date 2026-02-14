@@ -1,0 +1,16 @@
+name: stage1_baseline_eval
+model_id: mistralai/Ministral-3b-instruct
+tasks:
+  - hellaswag
+  - piqa
+  - arc_easy
+  - arc_challenge
+  - winogrande
+split: validation
+limit_per_task: 500
+dtype: bfloat16
+attn_implementation: sdpa
+prefill_bidirectional: false
+length_normalize: true
+kill_criteria:
+  - "If run fails to complete one full task within 20 minutes, stop and inspect GPU / network bottleneck."

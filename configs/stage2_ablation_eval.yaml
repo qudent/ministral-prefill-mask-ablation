@@ -1,0 +1,16 @@
+name: stage2_ablation_eval
+model_id: mistralai/Ministral-3b-instruct
+tasks:
+  - hellaswag
+  - piqa
+  - arc_easy
+  - arc_challenge
+  - winogrande
+split: validation
+limit_per_task: 500
+dtype: bfloat16
+attn_implementation: sdpa
+prefill_bidirectional: true
+length_normalize: true
+kill_criteria:
+  - "If macro accuracy drops below random-chance + 0.02 on first 2 tasks, stop and move straight to finetune stage."

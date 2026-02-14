@@ -1,0 +1,36 @@
+[project]
+name = "prefill-mask-ablation"
+version = "0.1.0"
+description = "Ministral 3B prefill causal-mask ablation experiments on Vast.ai"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "torch>=2.4.0",
+  "transformers>=4.47.0",
+  "datasets>=3.0.0",
+  "accelerate>=1.1.0",
+  "safetensors>=0.5.0",
+  "tqdm>=4.67.0",
+  "pyyaml>=6.0.2",
+  "numpy>=2.1.0",
+  "sentencepiece>=0.2.0"
+]
+
+[project.optional-dependencies]
+train = [
+  "deepspeed>=0.16.0"
+]
+
+[project.scripts]
+prefill-eval = "prefill_ablation.eval_mcq:main"
+prefill-finetune = "prefill_ablation.finetune_sft:main"
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]

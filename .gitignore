@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+uv.lock
+.env
+*.log
+runs/
+checkpoints/
+artifacts/
+.wandb/
+.DS_Store

@@ -1,0 +1,25 @@
+name: stage3_finetune_prefill_bidir
+model_id: mistralai/Ministral-3b-instruct
+dataset_id: yahma/alpaca-cleaned
+output_dir: runs/stage3_finetune_prefill_bidir
+train_samples: 50000
+eval_samples: 1000
+max_seq_len: 1024
+max_steps: 1200
+per_device_train_batch_size: 1
+per_device_eval_batch_size: 1
+gradient_accumulation_steps: 16
+learning_rate: 2.0e-5
+weight_decay: 0.1
+warmup_ratio: 0.03
+optim: adafactor
+lr_scheduler_type: cosine
+dtype: bfloat16
+attn_implementation: sdpa
+gradient_checkpointing: true
+prefill_bidirectional_train: true
+kill_after_steps: 150
+min_loss_improvement: 0.08
+kill_criteria:
+  - "If train loss collapses implausibly fast by step <50, inspect for label leakage and rerun with stricter masking objective."
+  - "If eval loss plateaus for 300 steps, abort and move to alternative objective stage."
