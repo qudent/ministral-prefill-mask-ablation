@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import inspect
 import json
+import traceback
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -187,6 +188,53 @@ class KillIfNoLearningCallback(TrainerCallback):
                 control.should_training_stop = True
 
 
+def _save_final_checkpoint(
+    *,
+    trainer: Trainer,
+    model,
+    tokenizer,
+    output_dir: Path,
+    base_model_id: str,
+) -> dict:
+    final_dir = output_dir / "final"
+    final_dir.mkdir(parents=True, exist_ok=True)
+
+    save_format = "hf_pretrained"
+    save_error: str | None = None
+
+    try:
+        trainer.save_model(str(final_dir))
+    except Exception as exc:
+        # Some model classes hit unsupported reverse conversions in save_pretrained.
+        # Fall back to a raw state_dict checkpoint that we can rehydrate from base_model_id.
+        save_format = "raw_state_dict"
+        save_error = "".join(traceback.format_exception_only(type(exc), exc)).strip()
+        print(f"[warn] trainer.save_model failed; falling back to raw state_dict: {save_error}")
+
+        if hasattr(model, "config") and model.config is not None:
+            model.config.save_pretrained(str(final_dir))
+        if hasattr(model, "generation_config") and model.generation_config is not None:
+            model.generation_config.save_pretrained(str(final_dir))
+
+        torch.save(model.state_dict(), final_dir / "pytorch_model.bin")
+
+    tokenizer.save_pretrained(str(final_dir))
+
+    meta = {
+        "format": save_format,
+        "base_model_id": base_model_id,
+    }
+    if save_error is not None:
+        meta["save_error"] = save_error
+    (final_dir / "checkpoint_meta.json").write_text(json.dumps(meta, indent=2))
+
+    return {
+        "format": save_format,
+        "save_error": save_error,
+        "final_dir": str(final_dir),
+    }
+
+
 def main() -> None:
     args = parse_args()
     set_seed(args.seed)
@@ -307,8 +355,13 @@ def main() -> None:
     train_result = trainer.train()
     eval_metrics = trainer.evaluate()
 
-    trainer.save_model(str(output_dir / "final"))
-    tokenizer.save_pretrained(str(output_dir / "final"))
+    checkpoint_info = _save_final_checkpoint(
+        trainer=trainer,
+        model=model,
+        tokenizer=tokenizer,
+        output_dir=output_dir,
+        base_model_id=args.model_id,
+    )
 
     summary = {
         "model_id": args.model_id,
@@ -318,6 +371,7 @@ def main() -> None:
         "eval_samples": len(eval_ds),
         "train_metrics": train_result.metrics,
         "eval_metrics": eval_metrics,
+        "checkpoint": checkpoint_info,
     }
 
     (output_dir / "summary.json").write_text(json.dumps(summary, indent=2))
