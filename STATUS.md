@@ -1,7 +1,7 @@
 # Ministral 3B Prefill Mask Ablation - Status
 
 ## Current State
-Stage 1 is currently running on Vast and progressing through benchmark tasks (latest observed: ARC-Easy). A local idle-monitor hook is running on the local machine (not on Vast) to alert if the remote session dies or utilization stays low while metrics are still incomplete.
+Stage 1 baseline evaluation has completed successfully and Stage 2 ablation evaluation is currently running on Vast. A local event-style idle hook is active and checks remote health every 2 minutes without storing any secrets on the Vast instance.
 
 ## Active Goals
 - [x] Create repo, scripts, and VAST-first workflow
@@ -10,11 +10,10 @@ Stage 1 is currently running on Vast and progressing through benchmark tasks (la
 - [x] Patch model loader for Mistral3 architecture
 - [x] Fix datasets/version/cache incompatibilities
 - [x] Start local idle-monitor hook (no remote secrets)
-- [ ] Execute staged runs on Vast.ai and collect first metrics
-  - [ ] Stage 1 baseline metrics
-  - [ ] Stage 2 ablated baseline metrics
-  - [ ] Stage 3A/3B finetune metrics
-  - [ ] Stage 4 recovery comparison
+- [x] Stage 1 baseline metrics
+- [ ] Stage 2 ablated baseline metrics
+- [ ] Stage 3A/3B finetune metrics
+- [ ] Stage 4 recovery comparison
 
 ## Runtime Details
 - Vast instance ID: `31425306`
@@ -27,16 +26,14 @@ Stage 1 is currently running on Vast and progressing through benchmark tasks (la
 - Local monitor log: `runs/local_idle_hook.log`
 
 ## Blockers
-- No known blocker at the moment.
+- No known blocker currently.
 
 ## Recent Results
-- Corrected model id to `mistralai/Ministral-3-3B-Instruct-2512`.
-- Added loader fallback for `Mistral3ForConditionalGeneration`.
-- Pinned `datasets` to `<3` and cleared stale HF dataset cache.
-- Patched benchmark dataset loading with `trust_remote_code=True`.
+- Stage 1 run completed and produced baseline metrics artifact.
+- Stage 2 started automatically after Stage 1 completion.
+- Local idle hook observed transition `stage1_metrics: 0 -> 1` and continues monitoring.
 
 ## Next Steps
-1. Continue periodic health checks while Stage 1 runs.
-2. Confirm Stage 1 writes `metrics.json` and Stage 2 starts automatically.
-3. Confirm Stage 2 writes `metrics.json`.
-4. Compute baseline-vs-ablation macro drop and record it here.
+1. Wait for Stage 2 to write `metrics.json`.
+2. Compute baseline-vs-ablation macro accuracy drop.
+3. Decide whether to launch Stage 3A/3B immediately or adjust setup first.
