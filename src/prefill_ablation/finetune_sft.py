@@ -287,15 +287,22 @@ def main() -> None:
 
     training_args = TrainingArguments(**training_args_kwargs)
 
-    trainer = Trainer(
-        model=model,
-        args=training_args,
-        train_dataset=train_ds,
-        eval_dataset=eval_ds,
-        tokenizer=tokenizer,
-        data_collator=SupervisedDataCollator(tokenizer),
-        callbacks=[KillIfNoLearningCallback(args.kill_after_steps, args.min_loss_improvement)],
-    )
+    trainer_kwargs = {
+        "model": model,
+        "args": training_args,
+        "train_dataset": train_ds,
+        "eval_dataset": eval_ds,
+        "data_collator": SupervisedDataCollator(tokenizer),
+        "callbacks": [KillIfNoLearningCallback(args.kill_after_steps, args.min_loss_improvement)],
+    }
+    trainer_sig = inspect.signature(Trainer.__init__).parameters
+    # transformers API moved tokenizer -> processing_class in newer releases.
+    if "tokenizer" in trainer_sig:
+        trainer_kwargs["tokenizer"] = tokenizer
+    elif "processing_class" in trainer_sig:
+        trainer_kwargs["processing_class"] = tokenizer
+
+    trainer = Trainer(**trainer_kwargs)
 
     train_result = trainer.train()
     eval_metrics = trainer.evaluate()
