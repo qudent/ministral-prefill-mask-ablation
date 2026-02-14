@@ -15,6 +15,7 @@ Code: `src/prefill_ablation/attention_ablation.py`
 
 ## Staged Experimental Design
 Detailed plan: `docs/EXPERIMENT_DESIGN.md`
+Results snapshot (Stage 1/2): `docs/RESULTS_STAGE1_STAGE2.md`
 
 - Stage 1: Baseline zero-shot (no ablation)
 - Stage 2: Ablated zero-shot (prefill bidirectional)

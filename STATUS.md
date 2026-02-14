@@ -1,7 +1,7 @@
 # Ministral 3B Prefill Mask Ablation - Status
 
 ## Current State
-Stage 1 (baseline causal prefill) and Stage 2 (prefill bidirectional ablation) are complete for `mistralai/Ministral-3-3B-Instruct-2512` on Vast instance `31425306`. Results show a large capability drop under prefill bidirectional attention.
+Stage 1 (baseline causal prefill) and Stage 2 (prefill bidirectional ablation) are complete for `mistralai/Ministral-3-3B-Instruct-2512` on Vast instance `31425306`. Results show a large capability drop under prefill bidirectional attention. A concise reproducibility + results snapshot is documented in `docs/RESULTS_STAGE1_STAGE2.md`.
 
 ## Active Goals
 - [x] Create repo, scripts, and VAST-first workflow
@@ -11,6 +11,7 @@ Stage 1 (baseline causal prefill) and Stage 2 (prefill bidirectional ablation) a
 - [x] Fix datasets/version/cache incompatibilities
 - [x] Stage 1 baseline metrics
 - [x] Stage 2 ablated baseline metrics
+- [x] Document Stage 1/2 results in repo with reproduction details
 - [ ] Stage 3A/3B finetune metrics
 - [ ] Stage 4 recovery comparison
 
@@ -25,12 +26,7 @@ Stage 1 (baseline causal prefill) and Stage 2 (prefill bidirectional ablation) a
 ## Artifacts
 - Stage 1 metrics: `runs/stage1_baseline_eval/20260214-145148/metrics.json`
 - Stage 2 metrics: `runs/stage2_ablation_eval/20260214-145456/metrics.json`
-
-## Runtime Details
-- Vast instance ID: `31425306`
-- GPU: `1x RTX 3090`
-- SSH endpoint: `ssh://root@108.55.118.247:53346`
-- Remote repo path: `/root/ministral-prefill-mask-ablation`
+- Results summary doc: `docs/RESULTS_STAGE1_STAGE2.md`
 
 ## Blockers
 - No blocker for proceeding to Stage 3. Main decision is training budget and whether to run 3A/3B in parallel.
