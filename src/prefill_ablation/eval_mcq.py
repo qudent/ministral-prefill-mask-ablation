@@ -27,12 +27,17 @@ class TaskSpec:
     loader: Callable[[str], Iterable[Example]]
 
 
+def _load_hf_dataset(name: str, *args, split: str):
+    # Some benchmark datasets ship dataset scripts and require explicit trust.
+    return load_dataset(name, *args, split=split, trust_remote_code=True)
+
+
 def _normalize_space(text: str) -> str:
     return " ".join(text.split())
 
 
 def load_hellaswag(split: str) -> Iterable[Example]:
-    ds = load_dataset("hellaswag", split=split)
+    ds = _load_hf_dataset("hellaswag", split=split)
     for row in ds:
         prompt = _normalize_space(f"{row['activity_label']}: {row['ctx_a']} {row['ctx_b']}")
         choices = [" " + _normalize_space(choice) for choice in row["endings"]]
@@ -41,7 +46,7 @@ def load_hellaswag(split: str) -> Iterable[Example]:
 
 
 def load_piqa(split: str) -> Iterable[Example]:
-    ds = load_dataset("piqa", split=split)
+    ds = _load_hf_dataset("piqa", split=split)
     for row in ds:
         prompt = _normalize_space(row["goal"]) + "\nAnswer:"
         choices = [" " + _normalize_space(row["sol1"]), " " + _normalize_space(row["sol2"])]
@@ -50,7 +55,7 @@ def load_piqa(split: str) -> Iterable[Example]:
 
 
 def _load_arc(config_name: str, split: str) -> Iterable[Example]:
-    ds = load_dataset("ai2_arc", config_name, split=split)
+    ds = _load_hf_dataset("ai2_arc", config_name, split=split)
     for row in ds:
         labels = list(row["choices"]["label"])
         texts = list(row["choices"]["text"])
@@ -72,7 +77,7 @@ def load_arc_challenge(split: str) -> Iterable[Example]:
 
 
 def load_winogrande(split: str) -> Iterable[Example]:
-    ds = load_dataset("winogrande", "winogrande_xl", split=split)
+    ds = _load_hf_dataset("winogrande", "winogrande_xl", split=split)
     for row in ds:
         sentence = row["sentence"]
         if "_" not in sentence:

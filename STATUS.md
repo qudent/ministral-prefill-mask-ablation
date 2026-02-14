@@ -1,7 +1,7 @@
 # Ministral 3B Prefill Mask Ablation - Status
 
 ## Current State
-Execution is active on Vast.ai with Stage 1 running again. Model loading and datasets package compatibility have been addressed. Latest blocker was a stale Hugging Face dataset cache generated under a different `datasets` major version; cache was cleared and the run restarted.
+Execution is active on Vast.ai but Stage 1 failed again due dataset trust policy (`piqa` requires `trust_remote_code=True` under current datasets stack). Eval loader has now been patched to pass trust for benchmark datasets and run is being restarted.
 
 ## Active Goals
 - [x] Create repo, scripts, and VAST-first workflow
@@ -10,6 +10,7 @@ Execution is active on Vast.ai with Stage 1 running again. Model loading and dat
 - [x] Patch model loader for Mistral3 architecture
 - [x] Fix datasets version incompatibility
 - [x] Clear incompatible HF dataset cache on runner
+- [x] Patch benchmark dataset loading with trust flag
 - [ ] Execute staged runs on Vast.ai and collect first metrics
   - [ ] Stage 1 baseline metrics
   - [ ] Stage 2 ablated baseline metrics
@@ -25,16 +26,17 @@ Execution is active on Vast.ai with Stage 1 running again. Model loading and dat
 - Remote tmux session: `prefill-s12`
 
 ## Blockers
-- No known blocker; waiting for Stage 1/2 completion.
+- No known blocker after trust-flag patch; pending rerun.
 
 ## Recent Results
 - Corrected model id to `mistralai/Ministral-3-3B-Instruct-2512`.
 - Added loader fallback for `Mistral3ForConditionalGeneration`.
 - Pinned `datasets` to `<3` for benchmark loaders.
-- Cleared `/root/.cache/huggingface/datasets` to remove stale metadata mismatch.
+- Cleared stale HF dataset cache.
+- Patched dataset loading calls to `trust_remote_code=True`.
 
 ## Next Steps
-1. Let Stage 1 finish and write `runs/stage1_baseline_eval/<ts>/metrics.json`.
-2. Let Stage 2 run automatically and write `runs/stage2_ablation_eval/<ts>/metrics.json`.
-3. Compare macro accuracy baseline vs ablated and record in this file.
-4. Launch Stage 3A and Stage 3B in parallel if Stage 1/2 complete cleanly.
+1. Pull latest code on active instance.
+2. Relaunch Stage 1 baseline and Stage 2 ablation.
+3. Monitor with periodic sleep-based check-ins and auto-restart on failure.
+4. Capture both metrics files and compute macro drop.
