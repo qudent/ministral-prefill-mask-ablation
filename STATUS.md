@@ -31,6 +31,7 @@ with intermediate checkpoint saves disabled by default.
 - Active Vast instance: `ssh7.vast.ai:33854` (`31433854`)
 - Launcher fix: `scripts/vast/run_stage3_finetune.sh` now defaults `SAVE_STEPS` to `MAX_STEPS+1`
   to avoid mid-run Trainer step-saves (final save uses project fallback logic).
+- Active rerun: `runs/stage3_finetune_prefill_bidir/20260214-213740` (training steps started; no traceback).
 - Completion marker path: `runs/stage3_finetune_prefill_bidir/.run_complete`
 - Local watcher script: `scripts/local/wait_or_crash.sh` (sparse polling)
 
