@@ -19,7 +19,7 @@ case "$MODE" in
     ;;
   prefill_bidir)
     STAGE_NAME="stage3_finetune_prefill_bidir"
-    EXTRA_FLAGS=(--prefill-bidirectional-train)
+    EXTRA_FLAGS=(--prompt-bidir-response-causal-train)
     ;;
   *)
     echo "Unknown mode: $MODE. Use causal|prefill_bidir"

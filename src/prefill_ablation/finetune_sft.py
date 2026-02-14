@@ -48,6 +48,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--attn-implementation", default="sdpa")
     parser.add_argument("--trust-remote-code", action="store_true")
     parser.add_argument("--prefill-bidirectional-train", action="store_true")
+    parser.add_argument(
+        "--prompt-bidir-response-causal-train",
+        action="store_true",
+        help="Use prefix-LM mask: prompt tokens bidirectional and response tokens causal.",
+    )
 
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--logging-steps", type=int, default=10)
@@ -96,14 +101,16 @@ def _encode_record(row: dict, tokenizer, max_seq_len: int):
 
     input_ids = (prompt_ids + response_ids)[:max_seq_len]
     labels = ([-100] * len(prompt_ids) + response_ids)[:max_seq_len]
+    prompt_len = min(len(prompt_ids), len(input_ids))
 
     if all(x == -100 for x in labels):
-        return {"input_ids": [], "labels": [], "attention_mask": []}
+        return {"input_ids": [], "labels": [], "attention_mask": [], "prompt_len": 0}
 
     return {
         "input_ids": input_ids,
         "labels": labels,
         "attention_mask": [1] * len(input_ids),
+        "prompt_len": prompt_len,
     }
 
 
@@ -132,8 +139,16 @@ def _load_splits(dataset_id: str, dataset_config: str | None, seed: int) -> tupl
 
 
 class SupervisedDataCollator:
-    def __init__(self, tokenizer):
+    def __init__(
+        self,
+        tokenizer,
+        *,
+        use_prefix_lm_mask: bool = False,
+        mask_dtype: torch.dtype = torch.bfloat16,
+    ):
         self.tokenizer = tokenizer
+        self.use_prefix_lm_mask = use_prefix_lm_mask
+        self.mask_dtype = mask_dtype
 
     def __call__(self, features: list[dict]):
         input_features = [
@@ -149,6 +164,32 @@ class SupervisedDataCollator:
             labels[i, : seq.shape[0]] = seq
 
         batch["labels"] = labels
+
+        if self.use_prefix_lm_mask:
+            batch_size, max_len = batch["input_ids"].shape
+            neg_inf = torch.finfo(self.mask_dtype).min
+            custom_mask = torch.full(
+                (batch_size, 1, max_len, max_len),
+                fill_value=neg_inf,
+                dtype=self.mask_dtype,
+            )
+
+            for i, feat in enumerate(features):
+                seq_len = int(batch["attention_mask"][i].sum().item())
+                if seq_len <= 0:
+                    continue
+
+                prompt_len = int(feat.get("prompt_len", 0))
+                prompt_len = max(0, min(prompt_len, seq_len))
+
+                if prompt_len > 0:
+                    custom_mask[i, 0, :prompt_len, :prompt_len] = 0
+
+                for q in range(prompt_len, seq_len):
+                    custom_mask[i, 0, q, : q + 1] = 0
+
+            batch["attention_mask"] = custom_mask
+
         return batch
 
 
@@ -237,7 +278,13 @@ def _save_final_checkpoint(
 
 def main() -> None:
     args = parse_args()
+    if args.prefill_bidirectional_train and args.prompt_bidir_response_causal_train:
+        raise ValueError(
+            "Choose one mode: --prefill-bidirectional-train or --prompt-bidir-response-causal-train"
+        )
+
     set_seed(args.seed)
+    model_dtype = parse_dtype(args.dtype)
 
     train_ds, eval_ds = _load_splits(args.dataset_id, args.dataset_config, args.seed)
 
@@ -270,7 +317,7 @@ def main() -> None:
     try:
         model = AutoModelForCausalLM.from_pretrained(
             args.model_id,
-            torch_dtype=parse_dtype(args.dtype),
+            torch_dtype=model_dtype,
             trust_remote_code=args.trust_remote_code,
             attn_implementation=args.attn_implementation,
         )
@@ -282,7 +329,7 @@ def main() -> None:
         try:
             model = AutoModelForImageTextToText.from_pretrained(
                 args.model_id,
-                torch_dtype=parse_dtype(args.dtype),
+                torch_dtype=model_dtype,
                 trust_remote_code=args.trust_remote_code,
                 attn_implementation=args.attn_implementation,
             )
@@ -340,7 +387,11 @@ def main() -> None:
         "args": training_args,
         "train_dataset": train_ds,
         "eval_dataset": eval_ds,
-        "data_collator": SupervisedDataCollator(tokenizer),
+        "data_collator": SupervisedDataCollator(
+            tokenizer,
+            use_prefix_lm_mask=args.prompt_bidir_response_causal_train,
+            mask_dtype=model_dtype,
+        ),
         "callbacks": [KillIfNoLearningCallback(args.kill_after_steps, args.min_loss_improvement)],
     }
     trainer_sig = inspect.signature(Trainer.__init__).parameters
@@ -367,6 +418,7 @@ def main() -> None:
         "model_id": args.model_id,
         "dataset_id": args.dataset_id,
         "prefill_bidirectional_train": args.prefill_bidirectional_train,
+        "prompt_bidir_response_causal_train": args.prompt_bidir_response_causal_train,
         "train_samples": len(train_ds),
         "eval_samples": len(eval_ds),
         "train_metrics": train_result.metrics,
