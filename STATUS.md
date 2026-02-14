@@ -1,19 +1,18 @@
 # Ministral 3B Prefill Mask Ablation - Status
 
 ## Current State
-Stage 1 (baseline causal prefill) and Stage 2 (prefill bidirectional ablation) are complete for `mistralai/Ministral-3-3B-Instruct-2512` on Vast instance `31425306`. Results show a large capability drop under prefill bidirectional attention. A concise reproducibility + results snapshot is documented in `docs/RESULTS_STAGE1_STAGE2.md`.
+Stage 1/2 are complete and documented. Stage 3A (`causal`) and Stage 3B (`prefill_bidir`) are currently running in parallel on two Vast instances (`31425306`, `31433854`) with `mistralai/Ministral-3-3B-Instruct-2512`.
 
 ## Active Goals
-- [x] Create repo, scripts, and VAST-first workflow
-- [x] Provision fresh Vast instance for execution
-- [x] Identify accessible Ministral 3B model ID
-- [x] Patch model loader for Mistral3 architecture
-- [x] Fix datasets/version/cache incompatibilities
-- [x] Stage 1 baseline metrics
-- [x] Stage 2 ablated baseline metrics
-- [x] Document Stage 1/2 results in repo with reproduction details
-- [ ] Stage 3A/3B finetune metrics
-- [ ] Stage 4 recovery comparison
+- [x] Stage 1 baseline eval
+- [x] Stage 2 ablated eval
+- [x] Stage 1/2 results documentation
+- [x] Stage 3 launch in parallel on separate Vast instances
+- [x] Add robust Transformer v5 compatibility in finetune script
+- [x] Add runtime/cost planning estimator for setup decisions
+- [ ] Stage 3A/3B final metrics
+- [ ] Stage 4 post-FT ablated eval
+- [ ] Recovery ratio comparison vs Stage 1 baseline
 
 ## Key Results (Stage 1 vs Stage 2)
 - Macro accuracy: `0.695057 -> 0.355898` (delta `-0.339159`, retention `0.512x`)
@@ -23,15 +22,24 @@ Stage 1 (baseline causal prefill) and Stage 2 (prefill bidirectional ablation) a
 - ARC-Challenge: `0.585284 -> 0.247492` (delta `-0.337793`)
 - WinoGrande: `0.666 -> 0.518` (delta `-0.148`)
 
+## Runtime/Infra Notes
+- Current measured early-step throughput:
+  - Stage 3A: `~3.318 s/step`
+  - Stage 3B: `~3.908 s/step`
+- Stage 3 script defaults tuned for lower overhead on single-GPU runs:
+  - `eval_samples=250`, `eval_steps=200`, `save_steps=400`
+- `scripts/local/estimate_vast_plan.py` estimates wall-clock + cost across setups (including `8x H100`) using measured step times and live Vast offers.
+
 ## Artifacts
 - Stage 1 metrics: `runs/stage1_baseline_eval/20260214-145148/metrics.json`
 - Stage 2 metrics: `runs/stage2_ablation_eval/20260214-145456/metrics.json`
-- Results summary doc: `docs/RESULTS_STAGE1_STAGE2.md`
+- Stage 1/2 summary: `docs/RESULTS_STAGE1_STAGE2.md`
+- Planning utility: `scripts/local/estimate_vast_plan.py`
 
 ## Blockers
-- No blocker for proceeding to Stage 3. Main decision is training budget and whether to run 3A/3B in parallel.
+- No blocker. Remaining risk is runtime cost/performance tradeoff for larger GPU configurations.
 
 ## Next Steps
-1. Launch Stage 3A (`causal`) and Stage 3B (`prefill_bidir`) finetunes.
-2. Run Stage 4 post-finetune ablated evaluation on both checkpoints.
-3. Compute recovery ratio vs Stage 1 baseline and pick best path.
+1. Let Stage 3A/3B complete and capture `summary.json` for both.
+2. Run Stage 4 post-finetune ablated eval on both checkpoints.
+3. Compute recovery ratio and decide whether to rerun Stage 3 at larger scale (e.g., H100 variants).

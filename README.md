@@ -53,6 +53,16 @@ bash scripts/vast/run_stage4_postft_eval.sh \
   runs/stage3_finetune_prefill_bidir/<timestamp>/final
 ```
 
+### Runtime/Cost Planning
+Estimate Stage 3 wall-clock and cost across setups from measured step times:
+```bash
+python scripts/local/estimate_vast_plan.py \
+  --causal-sec-per-step 3.318 \
+  --bidir-sec-per-step 3.908 \
+  --steps 1200 \
+  --startup-minutes 10
+```
+
 ## Model ID
 Default scripts use `mistralai/Ministral-3-3B-Instruct-2512` (confirmed accessible). If you want to run the same ablation on another Ministral 3B variant, set:
 ```bash
