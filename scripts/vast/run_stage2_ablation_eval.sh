@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-MODEL_ID="${MODEL_ID:-mistralai/Ministral-3b-instruct}"
+MODEL_ID="${MODEL_ID:-mistralai/Ministral-3-3B-Instruct-2512}"
 LIMIT="${LIMIT:-500}"
 TASKS="${TASKS:-hellaswag,piqa,arc_easy,arc_challenge,winogrande}"
 

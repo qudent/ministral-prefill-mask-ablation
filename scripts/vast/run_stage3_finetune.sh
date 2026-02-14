@@ -2,7 +2,7 @@
 set -euo pipefail
 
 MODE="${1:-causal}"  # causal | prefill_bidir
-MODEL_ID="${MODEL_ID:-mistralai/Ministral-3b-instruct}"
+MODEL_ID="${MODEL_ID:-mistralai/Ministral-3-3B-Instruct-2512}"
 DATASET_ID="${DATASET_ID:-yahma/alpaca-cleaned}"
 MAX_STEPS="${MAX_STEPS:-1200}"
 TRAIN_SAMPLES="${TRAIN_SAMPLES:-50000}"

@@ -14,7 +14,7 @@ bash scripts/vast/bootstrap.sh
 
 ## 3. Optional: set model and dataset
 ```bash
-export MODEL_ID=mistralai/Ministral-3b-instruct
+export MODEL_ID=mistralai/Ministral-3-3B-Instruct-2512
 export DATASET_ID=yahma/alpaca-cleaned
 ```
 

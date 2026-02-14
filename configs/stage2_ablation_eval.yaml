@@ -1,5 +1,5 @@
 name: stage2_ablation_eval
-model_id: mistralai/Ministral-3b-instruct
+model_id: mistralai/Ministral-3-3B-Instruct-2512
 tasks:
   - hellaswag
   - piqa

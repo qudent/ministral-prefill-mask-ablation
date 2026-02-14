@@ -1,5 +1,5 @@
 name: stage3_finetune_causal
-model_id: mistralai/Ministral-3b-instruct
+model_id: mistralai/Ministral-3-3B-Instruct-2512
 dataset_id: yahma/alpaca-cleaned
 output_dir: runs/stage3_finetune_causal
 train_samples: 50000
