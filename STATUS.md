@@ -1,12 +1,13 @@
 # Ministral 3B Prefill Mask Ablation - Status
 
 ## Current State
-Execution is active on Vast.ai using a fresh instance. Initial Stage 1 attempt failed fast due invalid/undownloadable model ID (`mistralai/Ministral-3b-instruct`). Default model has been corrected to `mistralai/Ministral-3-3B-Instruct-2512`, and Stage 1/2 are being restarted with that model.
+Execution is active on Vast.ai. Stage 1 has been retried after model-id correction, but failed again because `Ministral-3-3B-Instruct-2512` loads as `Mistral3ForConditionalGeneration` (not plain `AutoModelForCausalLM`). Loader code is now patched to fallback to `AutoModelForImageTextToText`, and the run is being restarted.
 
 ## Active Goals
 - [x] Create repo, scripts, and VAST-first workflow
 - [x] Provision fresh Vast instance for execution
 - [x] Identify accessible Ministral 3B model ID
+- [x] Patch model loader for Mistral3 architecture
 - [ ] Execute staged runs on Vast.ai and collect first metrics
   - [ ] Stage 1 baseline metrics
   - [ ] Stage 2 ablated baseline metrics
@@ -21,16 +22,15 @@ Execution is active on Vast.ai using a fresh instance. Initial Stage 1 attempt f
 - Remote repo path: `/root/ministral-prefill-mask-ablation`
 
 ## Blockers
-- No technical blocker after model-id correction.
+- No blocker after loader patch; pending rerun validation.
 
 ## Recent Results
-- Destroyed all existing Vast instances and started from clean state.
-- Created new instance and completed environment bootstrap.
-- Confirmed failure mode quickly from Stage 1 logs (HF 401 repo-not-found for old model id).
-- Updated defaults/configs/docs to `mistralai/Ministral-3-3B-Instruct-2512`.
+- Fast-failed Stage 1 with old model id (HF 401 repo-not-found) and corrected defaults.
+- Fast-failed Stage 1 again with `Mistral3Config` vs `AutoModelForCausalLM` mismatch.
+- Implemented fallback loader path to `AutoModelForImageTextToText` for eval and finetune scripts.
 
 ## Next Steps
-1. Pull latest repo on the active instance.
-2. Rerun Stage 1 baseline and Stage 2 ablation sequentially.
+1. Push loader patch and pull on active instance.
+2. Rerun Stage 1 and Stage 2 sequentially.
 3. Capture both `metrics.json` files and compute macro-accuracy drop.
 4. Rewrite this file with concrete metric values and Stage 3 launch decision.

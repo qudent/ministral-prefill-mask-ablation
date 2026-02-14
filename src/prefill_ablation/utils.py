@@ -5,7 +5,7 @@ from typing import Optional
 
 import numpy as np
 import torch
-from transformers import AutoModelForCausalLM, AutoTokenizer
+from transformers import AutoModelForCausalLM, AutoModelForImageTextToText, AutoTokenizer
 
 
 _DTYPE_MAP = {
@@ -50,12 +50,36 @@ def load_model_and_tokenizer(
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
 
-    model = AutoModelForCausalLM.from_pretrained(
-        model_name_or_path,
-        torch_dtype=torch_dtype,
-        trust_remote_code=trust_remote_code,
-        attn_implementation=attn_implementation,
-        device_map=device_map,
-    )
+    model = None
+    errors: list[Exception] = []
+
+    try:
+        model = AutoModelForCausalLM.from_pretrained(
+            model_name_or_path,
+            torch_dtype=torch_dtype,
+            trust_remote_code=trust_remote_code,
+            attn_implementation=attn_implementation,
+            device_map=device_map,
+        )
+        print("[model] loaded with AutoModelForCausalLM")
+    except Exception as exc:  # fallback for Ministral-3 models
+        errors.append(exc)
+
+    if model is None:
+        try:
+            model = AutoModelForImageTextToText.from_pretrained(
+                model_name_or_path,
+                torch_dtype=torch_dtype,
+                trust_remote_code=trust_remote_code,
+                attn_implementation=attn_implementation,
+                device_map=device_map,
+            )
+            print("[model] loaded with AutoModelForImageTextToText")
+        except Exception as exc:
+            errors.append(exc)
+
+    if model is None:
+        error_summary = " | ".join(str(e) for e in errors)
+        raise RuntimeError(f"Failed to load model {model_name_or_path}: {error_summary}")
 
     return model, tokenizer

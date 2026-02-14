@@ -9,6 +9,7 @@ import torch
 from datasets import Dataset, DatasetDict, load_dataset
 from transformers import (
     AutoModelForCausalLM,
+    AutoModelForImageTextToText,
     AutoTokenizer,
     Trainer,
     TrainerCallback,
@@ -214,12 +215,35 @@ def main() -> None:
     train_ds = train_ds.filter(lambda row: len(row["input_ids"]) > 0)
     eval_ds = eval_ds.filter(lambda row: len(row["input_ids"]) > 0)
 
-    model = AutoModelForCausalLM.from_pretrained(
-        args.model_id,
-        torch_dtype=parse_dtype(args.dtype),
-        trust_remote_code=args.trust_remote_code,
-        attn_implementation=args.attn_implementation,
-    )
+    model = None
+    load_errors: list[Exception] = []
+
+    try:
+        model = AutoModelForCausalLM.from_pretrained(
+            args.model_id,
+            torch_dtype=parse_dtype(args.dtype),
+            trust_remote_code=args.trust_remote_code,
+            attn_implementation=args.attn_implementation,
+        )
+        print("[model] loaded with AutoModelForCausalLM")
+    except Exception as exc:
+        load_errors.append(exc)
+
+    if model is None:
+        try:
+            model = AutoModelForImageTextToText.from_pretrained(
+                args.model_id,
+                torch_dtype=parse_dtype(args.dtype),
+                trust_remote_code=args.trust_remote_code,
+                attn_implementation=args.attn_implementation,
+            )
+            print("[model] loaded with AutoModelForImageTextToText")
+        except Exception as exc:
+            load_errors.append(exc)
+
+    if model is None:
+        details = " | ".join(str(e) for e in load_errors)
+        raise RuntimeError(f"Failed to load model {args.model_id}: {details}")
 
     patch = None
     if args.prefill_bidirectional_train:
