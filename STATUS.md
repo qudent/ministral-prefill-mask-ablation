@@ -32,6 +32,7 @@ with intermediate checkpoint saves disabled by default.
 - Launcher fix: `scripts/vast/run_stage3_finetune.sh` now defaults `SAVE_STEPS` to `MAX_STEPS+1`
   to avoid mid-run Trainer step-saves (final save uses project fallback logic).
 - Active rerun: `runs/stage3_finetune_prefill_bidir/20260214-213740` (training steps started; no traceback).
+- Milestone check at `2026-02-14T22:09:50Z`: reached `step 427` (past prior crash at `400`) with tmux alive and no traceback.
 - Completion marker path: `runs/stage3_finetune_prefill_bidir/.run_complete`
 - Local watcher script: `scripts/local/wait_or_crash.sh` (sparse polling)
 
