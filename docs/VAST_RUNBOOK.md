@@ -34,23 +34,20 @@ bash scripts/vast/run_stage4_postft_eval.sh \
 bash scripts/vast/tail_logs.sh 8
 ```
 
-## 5b. Unattended Autopilot (Sleep Mode)
-Use the adaptive supervisor + watcher pair for unattended runs:
+## 5b. Agent-Driven Babysitting (No Scripted Autopilot)
+Use a dedicated Codex tmux session to monitor, debug, and relaunch as needed:
 ```bash
-VAST_HOST=ssh6.vast.ai \
-VAST_PORT=17956 \
-INSTANCE_ID=<vast_instance_id> \
-MODE=prefill_bidir \
-MAX_STEPS=6000 \
-AUTO_STOP_PATIENCE_EVALS=8 \
-AUTO_STOP_MIN_DELTA=0.001 \
-AUTO_STOP_MIN_STEPS=3000 \
-AUTO_DESTROY_ON_DONE=1 \
-AUTO_DESTROY_ON_FAIL=1 \
-bash scripts/local/vast_sleep_stage3.sh
+tmux new-session -d -s vast-babysit
+tmux send-keys -t vast-babysit 'codex --dangerously-bypass-approvals-and-sandbox' Enter Enter
 ```
 
-Algorithm details: `docs/VAST_AUTOPILOT_ALGORITHM.md`
+Hand the babysitting agent:
+- Vast SSH target and project path
+- run id / log path
+- alert policy (step stall, traceback, GPU idle)
+- teardown policy (destroy instance on terminal done/fail)
+
+This keeps recovery logic in the agent loop instead of complex shell automation.
 
 ## 6. Cost discipline
 - Stop idle instances immediately.
