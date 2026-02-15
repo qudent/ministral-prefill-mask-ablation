@@ -13,6 +13,12 @@ EVAL_STEPS="${EVAL_STEPS:-200}"
 SAVE_STEPS="${SAVE_STEPS:-$((MAX_STEPS + 1))}"
 GRAD_ACCUM="${GRAD_ACCUM:-16}"
 LR="${LR:-2e-5}"
+LR_SCHEDULER="${LR_SCHEDULER:-cosine}"
+WARMUP_RATIO="${WARMUP_RATIO:-0.03}"
+AUTO_STOP_PATIENCE_EVALS="${AUTO_STOP_PATIENCE_EVALS:-0}"
+AUTO_STOP_MIN_DELTA="${AUTO_STOP_MIN_DELTA:-0.0}"
+AUTO_STOP_MIN_STEPS="${AUTO_STOP_MIN_STEPS:-0}"
+HF_REPO_ID="${HF_REPO_ID:-di2ox3/ministral-prefill-mask-ablation}"
 
 case "$MODE" in
   causal)
@@ -34,6 +40,8 @@ RUN_DIR="runs/${STAGE_NAME}/${TS}"
 mkdir -p "$RUN_DIR"
 
 echo "[$STAGE_NAME] model=$MODEL_ID dataset=$DATASET_ID max_steps=$MAX_STEPS"
+echo "[$STAGE_NAME] lr=$LR scheduler=$LR_SCHEDULER warmup_ratio=$WARMUP_RATIO"
+echo "[$STAGE_NAME] auto_stop_patience_evals=$AUTO_STOP_PATIENCE_EVALS auto_stop_min_delta=$AUTO_STOP_MIN_DELTA auto_stop_min_steps=$AUTO_STOP_MIN_STEPS"
 uv run prefill-finetune \
   --model-id "$MODEL_ID" \
   --dataset-id "$DATASET_ID" \
@@ -45,6 +53,12 @@ uv run prefill-finetune \
   --save-steps "$SAVE_STEPS" \
   --gradient-accumulation-steps "$GRAD_ACCUM" \
   --learning-rate "$LR" \
+  --lr-scheduler-type "$LR_SCHEDULER" \
+  --warmup-ratio "$WARMUP_RATIO" \
+  --auto-stop-patience-evals "$AUTO_STOP_PATIENCE_EVALS" \
+  --auto-stop-min-delta "$AUTO_STOP_MIN_DELTA" \
+  --auto-stop-min-steps "$AUTO_STOP_MIN_STEPS" \
+  --hf-repo-id "$HF_REPO_ID" \
   --gradient-checkpointing \
   "${EXTRA_FLAGS[@]}" \
   2>&1 | tee "$RUN_DIR/log.txt"

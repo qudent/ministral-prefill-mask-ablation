@@ -13,7 +13,8 @@ dependencies = [
   "tqdm>=4.67.0",
   "pyyaml>=6.0.2",
   "numpy>=2.1.0",
-  "sentencepiece>=0.2.0"
+  "sentencepiece>=0.2.0",
+  "huggingface-hub>=1.0.0"
 ]
 
 [project.optional-dependencies]

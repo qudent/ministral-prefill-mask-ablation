@@ -63,6 +63,30 @@ def parse_args() -> argparse.Namespace:
 
     parser.add_argument("--kill-after-steps", type=int, default=150)
     parser.add_argument("--min-loss-improvement", type=float, default=0.08)
+    parser.add_argument(
+        "--auto-stop-patience-evals",
+        type=int,
+        default=0,
+        help="Stop if eval_loss fails to improve by min-delta for this many eval calls. 0 disables.",
+    )
+    parser.add_argument(
+        "--auto-stop-min-delta",
+        type=float,
+        default=0.0,
+        help="Minimum eval_loss drop required to count as an improvement for auto-stop.",
+    )
+    parser.add_argument(
+        "--auto-stop-min-steps",
+        type=int,
+        default=0,
+        help="Do not apply eval-loss auto-stop before this global step.",
+    )
+
+    parser.add_argument(
+        "--hf-repo-id",
+        default=None,
+        help="HuggingFace Hub repo to upload checkpoint to (e.g. user/repo). Skipped if not set.",
+    )
 
     return parser.parse_args()
 
@@ -229,6 +253,69 @@ class KillIfNoLearningCallback(TrainerCallback):
                 control.should_training_stop = True
 
 
+@dataclass
+class EvalPlateauState:
+    best_loss: float | None = None
+    bad_eval_count: int = 0
+
+
+class StopOnEvalPlateauCallback(TrainerCallback):
+    def __init__(
+        self,
+        *,
+        patience_evals: int,
+        min_delta: float,
+        min_steps: int,
+    ):
+        self.patience_evals = max(int(patience_evals), 0)
+        self.min_delta = max(float(min_delta), 0.0)
+        self.min_steps = max(int(min_steps), 0)
+        self.state = EvalPlateauState()
+
+    def on_evaluate(self, args, state, control, metrics=None, **kwargs):
+        if self.patience_evals <= 0:
+            return
+        if int(state.global_step) < self.min_steps:
+            return
+
+        metrics = metrics or {}
+        if "eval_loss" not in metrics:
+            return
+
+        eval_loss = float(metrics["eval_loss"])
+        if not torch.isfinite(torch.tensor(eval_loss)):
+            print(f"[auto-stop] eval_loss is non-finite ({eval_loss}); stopping")
+            control.should_training_stop = True
+            return
+
+        best = self.state.best_loss
+        if best is None or eval_loss < (best - self.min_delta):
+            self.state.best_loss = eval_loss
+            self.state.bad_eval_count = 0
+            print(
+                "[auto-stop] improvement: "
+                f"step={state.global_step} eval_loss={eval_loss:.6f} "
+                f"best={self.state.best_loss:.6f}"
+            )
+            return
+
+        self.state.bad_eval_count += 1
+        print(
+            "[auto-stop] no significant eval improvement: "
+            f"step={state.global_step} eval_loss={eval_loss:.6f} "
+            f"best={best:.6f} min_delta={self.min_delta:.6f} "
+            f"bad_evals={self.state.bad_eval_count}/{self.patience_evals}"
+        )
+
+        if self.state.bad_eval_count >= self.patience_evals:
+            print(
+                "[auto-stop] stopping: "
+                f"eval_loss plateaued for {self.state.bad_eval_count} evals "
+                f"(min_delta={self.min_delta:.6f})"
+            )
+            control.should_training_stop = True
+
+
 def _save_final_checkpoint(
     *,
     trainer: Trainer,
@@ -274,6 +361,71 @@ def _save_final_checkpoint(
         "save_error": save_error,
         "final_dir": str(final_dir),
     }
+
+
+def _upload_to_hub(
+    *,
+    local_dir: Path,
+    repo_id: str,
+    path_in_repo: str,
+    summary_path: Path | None = None,
+) -> None:
+    try:
+        from huggingface_hub import HfApi
+    except ImportError:
+        print("[warn] huggingface_hub not installed; skipping upload")
+        return
+
+    api = HfApi()
+    print(f"[hf] uploading {local_dir} -> {repo_id}/{path_in_repo}")
+    api.upload_folder(
+        repo_id=repo_id,
+        folder_path=str(local_dir),
+        path_in_repo=path_in_repo,
+        commit_message=f"Checkpoint {path_in_repo}",
+    )
+    if summary_path and summary_path.exists():
+        api.upload_file(
+            repo_id=repo_id,
+            path_or_fileobj=str(summary_path),
+            path_in_repo=f"{path_in_repo}/summary.json",
+            commit_message=f"Training summary for {path_in_repo}",
+        )
+    print(f"[hf] upload complete: https://huggingface.co/{repo_id}/tree/main/{path_in_repo}")
+
+
+def _maybe_clear_quantized_flag(model, *, target_dtype: torch.dtype) -> None:
+    if not getattr(model, "is_quantized", False):
+        return
+
+    # Some loaders expose floating parameter tensors while still marking the model
+    # as quantized. Trainer blocks finetuning on the flag alone.
+    dtypes = {p.dtype for p in model.parameters()}
+    floating = {
+        torch.float16,
+        torch.bfloat16,
+        torch.float32,
+        torch.float64,
+        torch.float8_e4m3fn,
+        torch.float8_e5m2,
+    }
+    if not dtypes or not dtypes.issubset(floating):
+        return
+
+    if torch.float8_e4m3fn in dtypes or torch.float8_e5m2 in dtypes:
+        print(
+            "[model] FP8 params detected; keeping FP8 tensors and clearing "
+            "quantized flag so Trainer can proceed"
+        )
+
+    try:
+        model.is_quantized = False
+        print(
+            "[model] cleared quantized flag for materialized floating weights "
+            f"(quantization_method={getattr(model, 'quantization_method', None)}, dtypes={sorted(str(x) for x in dtypes)})"
+        )
+    except Exception as exc:
+        print(f"[warn] unable to clear quantized flag: {type(exc).__name__}: {exc}")
 
 
 def main() -> None:
@@ -341,6 +493,8 @@ def main() -> None:
         details = " | ".join(str(e) for e in load_errors)
         raise RuntimeError(f"Failed to load model {args.model_id}: {details}")
 
+    _maybe_clear_quantized_flag(model, target_dtype=model_dtype)
+
     patch = None
     if args.prefill_bidirectional_train:
         patch = apply_prefill_bidirectional_patch(model)
@@ -386,6 +540,16 @@ def main() -> None:
 
     training_args = TrainingArguments(**training_args_kwargs)
 
+    callbacks = [KillIfNoLearningCallback(args.kill_after_steps, args.min_loss_improvement)]
+    if args.auto_stop_patience_evals > 0:
+        callbacks.append(
+            StopOnEvalPlateauCallback(
+                patience_evals=args.auto_stop_patience_evals,
+                min_delta=args.auto_stop_min_delta,
+                min_steps=args.auto_stop_min_steps,
+            )
+        )
+
     trainer_kwargs = {
         "model": model,
         "args": training_args,
@@ -396,7 +560,7 @@ def main() -> None:
             use_prefix_lm_mask=args.prompt_bidir_response_causal_train,
             mask_dtype=model_dtype,
         ),
-        "callbacks": [KillIfNoLearningCallback(args.kill_after_steps, args.min_loss_improvement)],
+        "callbacks": callbacks,
     }
     trainer_sig = inspect.signature(Trainer.__init__).parameters
     # transformers API moved tokenizer -> processing_class in newer releases.
@@ -430,8 +594,20 @@ def main() -> None:
         "checkpoint": checkpoint_info,
     }
 
-    (output_dir / "summary.json").write_text(json.dumps(summary, indent=2))
-    print(f"[done] wrote training summary to {output_dir / 'summary.json'}")
+    summary_path = output_dir / "summary.json"
+    summary_path.write_text(json.dumps(summary, indent=2))
+    print(f"[done] wrote training summary to {summary_path}")
+
+    if args.hf_repo_id:
+        run_name = output_dir.name
+        if run_name == "final":
+            run_name = output_dir.parent.name
+        _upload_to_hub(
+            local_dir=output_dir / "final",
+            repo_id=args.hf_repo_id,
+            path_in_repo=run_name,
+            summary_path=summary_path,
+        )
 
     if patch is not None:
         patch.remove()
