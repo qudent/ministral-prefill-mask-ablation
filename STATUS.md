@@ -51,13 +51,20 @@ Target horizon shown: 6000 steps.
 - A100 cheaper offer (`$0.6676/h`): wall `4.96 / 5.80 / 9.17 h`, cost `$3.31 / $3.87 / $6.12` (migration risk)
 - H100 PCIe (`$1.1347/h`): wall `4.48 / 5.18 / 7.96 h`, cost `$5.08 / $5.87 / $9.03` (higher setup risk)
 
+## Checkpoints on HuggingFace Hub
+- Repo: [`di2ox3/ministral-prefill-mask-ablation`](https://huggingface.co/di2ox3/ministral-prefill-mask-ablation) (public)
+- Stage 3B checkpoint: `stage3b-20260214-233534/` on HF
+- Local checkpoint copies deleted to save ~14GB.
+- Training script auto-uploads via `--hf-repo-id` after each run.
+- Vast instances need `HF_TOKEN` env var for uploads; downloads are unauthenticated (public repo).
+
 ## Infra State
 - Active Vast instance: `31457957` only.
 - Idle H100 instance was terminated: `31457612`.
 
 ## Key Artifacts
 - Consolidated report: `docs/RESULTS_STAGE1_TO_STAGE4.md`
-- Stage 3B checkpoint: `runs/stage3_finetune_prefill_bidir/20260214-233534/final`
+- Stage 3B checkpoint: HF `di2ox3/ministral-prefill-mask-ablation/stage3b-20260214-233534`
 - Stage 4 metrics: `runs/stage4_postft_eval/20260215-093750_final/metrics.json`
 - Stage 5 live log:
   - `/root/ministral-prefill-mask-ablation/runs/stage3_finetune_prefill_bidir/20260215-104518/log.txt`
