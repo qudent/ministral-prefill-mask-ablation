@@ -63,19 +63,25 @@ def _generate_responses(
     for task_type, items in dataset.items():
         for item in items:
             messages = _build_messages(task_type, item)
-            input_ids = tokenizer.apply_chat_template(
-                messages, return_tensors="pt", add_generation_prompt=True
-            ).to(device)
+            inputs = tokenizer.apply_chat_template(
+                messages, return_tensors="pt", add_generation_prompt=True, return_dict=True,
+            )
+            input_ids = inputs["input_ids"].to(device)
+            attention_mask = inputs.get("attention_mask")
+            if attention_mask is not None:
+                attention_mask = attention_mask.to(device)
 
             t0 = time.time()
+            gen_kwargs = dict(
+                input_ids=input_ids,
+                max_new_tokens=max_new_tokens,
+                do_sample=False,
+                pad_token_id=tokenizer.pad_token_id or tokenizer.eos_token_id,
+            )
+            if attention_mask is not None:
+                gen_kwargs["attention_mask"] = attention_mask
             with torch.no_grad():
-                output_ids = model.generate(
-                    input_ids,
-                    max_new_tokens=max_new_tokens,
-                    do_sample=False,
-                    temperature=1.0,
-                    pad_token_id=tokenizer.pad_token_id or tokenizer.eos_token_id,
-                )
+                output_ids = model.generate(**gen_kwargs)
             elapsed = time.time() - t0
 
             # Decode only new tokens
