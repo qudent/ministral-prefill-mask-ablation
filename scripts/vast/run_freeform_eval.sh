@@ -26,7 +26,7 @@ if [ ! -f "${LOCAL_CHECKPOINT_DIR}/pytorch_model.bin" ]; then
     echo "Downloading checkpoint from HuggingFace..."
     mkdir -p "${LOCAL_CHECKPOINT_DIR}"
     # Use huggingface-hub CLI to download the subfolder
-    python3 -c "
+    uv run python -c "
 from huggingface_hub import snapshot_download
 snapshot_download(
     repo_id='${HF_CHECKPOINT}',
