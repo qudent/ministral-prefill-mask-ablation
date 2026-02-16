@@ -24,6 +24,8 @@ train = []
 [project.scripts]
 prefill-eval = "prefill_ablation.eval_mcq:main"
 prefill-finetune = "prefill_ablation.finetune_sft:main"
+prefill-freeform-eval = "prefill_ablation.eval_freeform:main"
+prefill-judge = "prefill_ablation.judge:main"
 
 [build-system]
 requires = ["setuptools>=68", "wheel"]
