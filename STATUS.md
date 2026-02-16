@@ -1,48 +1,35 @@
 # Ministral 3B Prefill Mask Ablation - Status
 
 ## Current State
-Stages 1-4 are complete for Stage 3B (`20260214-233534`).
-Stage 5A run (`20260215-104518`) stopped at step 1300 due early-stop policy.
-Autopilot scripts were removed; workflow is now agent-driven (Codex babysitting), not script orchestration.
+**Experiment complete.** Stages 1-4 plus intensive fine-tuning (Stage 5) done.
+More training does NOT improve prefill mask ablation recovery beyond ~0.41 macro.
 
-## Active Goals
-- [x] Stage 1 baseline eval
-- [x] Stage 2 ablated eval
-- [x] Stage 3B leakage-safe finetune checkpoint
-- [x] Stage 4 post-FT ablated eval
-- [x] Non-prefill comparison (Stage 3B vs vanilla)
-- [ ] Stage 5 long-run rerun under agent-driven monitoring
-- [ ] Stage 5 final eval/report vs estimate
+## All Results
 
-## Confirmed Stage 1-4 Metrics
-- Stage 1 macro: `0.6950568562`
-- Stage 2 macro (ablated): `0.3558976000`
-- Stage 4 macro (ablated, post-FT): `0.4086983278`
-- Stage 2 damage vs Stage 1: `-0.3391592562` (retention `0.512x`)
-- Stage 4 gain vs Stage 2: `+0.0528007278`
-- Stage 4 retention vs Stage 1: `0.5880x`
+| Model | Steps | Epochs | Eval Loss | Non-ablated | Ablated | Notes |
+|-------|-------|--------|-----------|-------------|---------|-------|
+| Vanilla | 0 | 0 | — | 0.695 | 0.356 | baseline |
+| Stage 3B | 1200 | 0.38 | ~1.16 | 0.620 | 0.409 | original FT |
+| Stage 5C | 6500 | 2.08 | 1.283 | 0.591 | 0.407 | optimal long-run |
+| Stage 5B | 10000 | 3.20 | 1.638 | 0.548 | 0.383 | overfitted |
 
-## Non-Prefill Side Effect
-- Vanilla non-prefill macro: `0.6950568562`
-- Stage 3B non-prefill macro: `0.6199344482`
-- Delta (FT - vanilla): `-0.0751224080`
+## Key Findings
+1. Ablated recovery plateaus at ~0.41 macro regardless of training length
+2. More training (beyond ~1200 steps) degrades non-ablated performance
+3. Eval loss optimum at ~6500 steps (2 epochs) but doesn't translate to better MCQ
+4. Overfitting (10000 steps) hurts both ablated and non-ablated performance
+5. The prefill mask FT approach has a ceiling for this model/dataset combo
 
-## Stage 5A (Completed, Early Stop)
-- Run dir: `runs/stage3_finetune_prefill_bidir/20260215-104518`
-- Config gate:
-  - `AUTO_STOP_PATIENCE_EVALS=4`
-  - `AUTO_STOP_MIN_DELTA=0.003`
-  - `AUTO_STOP_MIN_STEPS=600`
-- Outcome:
-  - Stopped at step `1300` by design
-  - Train runtime: `3731.7643s`
-  - Final eval loss: `1.44849`
+## Stage 5 Eval Loss Curve (5C run)
+- Step 1000: 1.437 | Step 2000: 1.415 | Step 3000: 1.334
+- Step 3500: **1.289** (best mid-run) | Step 4000: 1.341
+- Step 5000: 1.302 | Step 6000: 1.294 | Step 6500: **1.283** (final)
 
-## Infra State
-- Vast instance `31457957` is still running and reachable.
-- No active remote tmux training sessions.
+## Infra
+- Vast instance `31462675` destroyed. No active instances.
 
 ## Key Artifacts
-- Consolidated report: `docs/RESULTS_STAGE1_TO_STAGE4.md`
-- Stage 3B checkpoint: `runs/stage3_finetune_prefill_bidir/20260214-233534/final`
-- Stage 5A summary: `runs/stage3_finetune_prefill_bidir/20260215-104518/summary.json`
+- Report: `docs/RESULTS_STAGE1_TO_STAGE4.md`
+- Stage 3B: `runs/stage3_finetune_prefill_bidir/20260214-233534/final`
+- Stage 5B: `runs/stage3_finetune_prefill_bidir/20260215-130710/final` (on Vast, destroyed)
+- Stage 5C: `runs/stage3_finetune_prefill_bidir/20260215-201204/final` (on Vast, destroyed)
